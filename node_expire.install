@@ -1,0 +1,94 @@
+<?php
+// $Id: node_expire.install,v 1.5.2.5 2010/12/11 18:42:06 vikramy Exp $
+
+/**
+ * @file
+ * Install, uninstall and update the module.
+ */
+
+/**
+ * Implements hook_install().
+ */
+function node_expire_install() {
+  // TODO The drupal_(un)install_schema functions are called automatically in D7.
+  
+  // Create a default vocabulary named "Expiry rule".
+  $description = st('Use tags to group articles on similar topics into categories.');
+  $help = st('Enter a comma-separated list of words to describe your content.');
+  $vocabulary = (object) array(
+    'name' => 'Expiry Rule', 
+    'description' => $description, 
+    'machine_name' => 'expiry_rule', 
+    'help' => $help,
+  );
+  taxonomy_vocabulary_save($vocabulary);
+}
+
+/**
+ * Implements hook_schema().
+ */
+function node_expire_schema() {
+  $schema['node_expire'] = array(
+    'description' => 'Alerts administrators of possibly outdated materials, and optionally unpublishes them.',
+    'fields' => array(
+      'nid' => array(
+        'description' => 'Node ID from {node}.nid.',
+        'type'        => 'int',
+        'unsigned'    => TRUE,
+        'not null'    => TRUE
+      ),
+      'status' => array(
+        'type'        => 'int',
+        'size'        => 'tiny',
+        'default'     => 0,
+        'not null'    => TRUE
+      ),
+      'lastnotify' => array(
+        'type'        => 'int',
+        'default'     => 0,
+        'unsigned'    => TRUE,
+        'not null'    => TRUE
+      ),
+    ),
+    'primary key' => array('nid'),
+    'indexes' => array(
+      'expire_expired_lastnotify' => array('expire', 'expired', 'lastnotify'),
+    ),
+  );
+
+  return $schema;
+}
+
+function node_expire_field_schema($field) {
+   return array(
+     'columns' => array(
+       'date' => array(
+         'type' => 'datetime',
+         'size' => 'normal',
+		 'not_null' => TRUE,
+       ),
+	   'tid' => array(
+	      'type' => 'int',
+          'size' => 'normal',
+	    ),
+	   'active' => array(
+		  'type' => 'int',
+		  'size' => 'tiny',
+		  'default' => 
+		),
+      ),
+  );
+}
+
+
+/**
+ * Implements hook_uninstall().
+ */
+function node_expire_uninstall() {
+
+  // Delete global variable
+  variable_del('node_expire_ntypes');
+}
+
+
+
