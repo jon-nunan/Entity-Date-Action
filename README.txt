@@ -1,4 +1,3 @@
-// $Id: README.txt,v 1.10.2.2 2011/01/04 20:57:50 vikramy Exp $
 NODE EXPIRE
 ===========
 
@@ -9,9 +8,6 @@ sending an email to the author.
 All this power is possible due Rules module. On each cron, Node expire scan for
 expired content and let Rules module work with it. You can select several actions
 to perform with these nodes.
-
-If using jQuery UI module, the date field will activate a Calendar widget in order
-to make the process easier and more fun.
 
 If using Views module, all data will be exported, allowing you to build custom lists.
 
@@ -45,6 +41,7 @@ CREDITS
 Daryl Houston     <daryl@learnhouston.com> (Original author)
 Andrew Langland                            (D5-dev and D6-dev rewrite)
 Bruno Massa                                (D6 v2 rewrite)
+Jon Nunan		<http://drupal.org/user/106185>	(D7 v3 rewrite to use fields)
 
 
 RULES MODULE EXAMPLE
@@ -53,6 +50,8 @@ RULES MODULE EXAMPLE
 For those people that want to use this module quickly, import the code below on
 admin/rules/ie/import and it will automatically configure it to unpublish the
 content once it expires. Just paste it and have fun.
+
+TODO: remove this and add it to a wizard for D7
 
 array (
   'rules' =>
