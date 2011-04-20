@@ -16,6 +16,9 @@ DEFINE('NODE_EXPIRE_FORMAT_JS', 'yy-mm-dd');
 function node_expire_cron() {
   watchdog('node expire', 'Checking for nodes to expire', NULL);
   $time = REQUEST_TIME;
+  // get all active fields
+  
+  /*
   $result = db_select('node', 'n')->fields('n');
   $result->join('node_expire', 'ne', 'n.nid = ne.nid');
   $result->condition('ne.expire', $time, '<=');
@@ -29,6 +32,7 @@ function node_expire_cron() {
 	  $author = user_load($node->uid);
       rules_invoke_event('node_expired', &$node, $author);
   }
+  */
 }
 
 function node_expire_field_info() {
@@ -54,20 +58,67 @@ function node_expire_field_formatter_info() {
 }
 
 
+function node_expire_field_formatter_view($entity_type, $entity, $field, $instance, $langcode, $items, $display) {
+  $element = array();
+
+  switch ($display['type']) {
+    // This formatter simply outputs the field as text and with a color.
+    case 'node_expire_default_formatter':
+      foreach ($items as $delta => $item) {
+        $element[$delta]['#markup'] = '<p> ' . $item['node_expire'] . '</p>';
+      }
+      break;
+  }
+
+  return $element;
+}
+
+
 /**
  * Implements hook_field_widget_info().
  *
  * One widget is provided.
  * - A simple datepicker with a term reference field
  */
-function field_example_field_widget_info() {
+function node_expire_field_widget_info() {
   return array(
     'node_expire_default_widget' => array(
-      'label' => t('Default date picker and term reference'),
+      'label' => t('Default date picker'),
       'field types' => array('node_expire_field'),
     ),
   );
 }
+
+/**
+ * Implements hook_field_widget_form().
+ *
+ * Only one widget type implemented currently.
+ *
+ * The 'node_expire_default_widget' shows a date field, and a term reference field
+ *
+ */
+
+function node_expire_field_widget_form(&$form, &$form_state, $field, $instance, $langcode, $items, $delta, $element) {
+
+     dpm($instance);
+  switch ($instance['widget']['type']) {
+
+   case 'node_expire_default_widget':
+     $element['node_expire'] = array(
+       '#type' => 'textfield',
+       '#title' => 'Action Date',
+       '#size' => 10,
+       '#default_value' => '',
+       '#attributes' => array('class' => array('date-entry')),
+       '#description' => t('The date to set off an action'),
+      );
+
+      break;
+
+  }
+  return $element;
+}
+
 
 
 

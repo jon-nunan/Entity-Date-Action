@@ -10,11 +10,10 @@
  * Implements hook_install().
  */
 function node_expire_install() {
-  // TODO The drupal_(un)install_schema functions are called automatically in D7.
   
   // Create a default vocabulary named "Expiry rule".
-  $description = st('Use tags to group articles on similar topics into categories.');
-  $help = st('Enter a comma-separated list of words to describe your content.');
+  $description = st('Use to choose what action should be taken on the chosen date.');
+  $help = st('Select all actions that should run on the selected date.');
   $vocabulary = (object) array(
     'name' => 'Expiry Rule', 
     'description' => $description, 
@@ -22,6 +21,20 @@ function node_expire_install() {
     'help' => $help,
   );
   taxonomy_vocabulary_save($vocabulary);
+  $vid = $vocabulary->vid;
+  variable_set('node_expire_default_vocab',$vid);
+  $terms = array('Send reminder email', 'Publish node', 'Un-publish node');
+  foreach($terms as $term) {
+    $t = (object) array(
+	  'vid'=>$vid,
+	  'name'=>$term,
+	  'description' => '',
+	  'parent' => array(0),
+	  'vocabulary_machine_name' =>$vocabulary->machine_name,
+	  );
+	taxonomy_term_save($t);
+  }
+  drupal_set_message('Taxonomy "Expiry Rule" created.');
 }
 
 
@@ -29,10 +42,13 @@ function node_expire_field_schema($field) {
    return array(
      'columns' => array(
        'date' => array(
-         'type' => 'datetime',
-         'size' => 'normal',
-		 'not_null' => TRUE,
-       ),
+        'type' => 'datetime',
+        'mysql_type' => 'DATETIME',
+        'pgsql_type' => 'timestamp without time zone', 
+        'not null' => FALSE, 
+        'sortable' => TRUE, 
+        'views' => TRUE,
+      ),
 	   'tid' => array(
 	      'type' => 'int',
           'size' => 'normal',
@@ -51,7 +67,15 @@ function node_expire_field_schema($field) {
  * Implements hook_uninstall().
  */
 function node_expire_uninstall() {
-
+  //uninstall vocab
+  $vid = variable_get('node_expire_default_vocab');
+  if(isset($vid)) {
+	taxonomy_vocabulary_delete($vid);
+	variable_del('node_expire_default_vocab');
+	drupal_set_message('Taxonomy "Expiry Rule" deleted.');
+  } else {
+    drupal_set_message('Taxonomy "Expiry Rule" not found, no vocabs removed:'.$vid);
+  }
 }
 
 
