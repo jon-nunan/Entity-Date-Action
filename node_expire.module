@@ -11,6 +11,7 @@ DEFINE('NODE_EXPIRE_FORMAT_JS', 'yy-mm-dd');
 
 /**
  * Implements hook_cron().
+ *  TODO: update this to look for fields
  */
 function node_expire_cron() {
   watchdog('node expire', 'Checking for nodes to expire', NULL);
@@ -30,70 +31,45 @@ function node_expire_cron() {
   }
 }
 
+function node_expire_field_info() {
+  return array(
+    'node_expire_field' => array(
+      'label' => t('Date action'), 
+      'description' => t('Set a date to perform an action (e.g. expire a node after a certain date).'), 
+      'default_widget' => 'node_expire_default_widget', 
+      'default_formatter' => 'node_expire_default_formatter',
+    ),
+  );
+}
+
+
+function node_expire_field_formatter_info() {
+  return array(
+    // This formatter just displays the hex value in the color indicated.
+    'node_expire_default_formatter' => array(
+      'label' => t('Displays countodwn to authorised users'),
+      'field types' => array('node_expire_field'),
+    ),
+  );
+}
+
+
 /**
- * Implements hook_form_alter().
+ * Implements hook_field_widget_info().
  *
- * Add expiration options to the node entry forms
+ * One widget is provided.
+ * - A simple datepicker with a term reference field
  */
-function node_expire_form_alter(&$form, &$form_state, $form_id) {
-  if (isset($form['type']['#value'])
-       and $form['type']['#value'] . '_node_form' == $form_id
-       and $ntypes = variable_get('node_expire_ntypes', array())
-       and isset($ntypes[$form['type']['#value']])) {
-
-    module_load_include('nodeapi.inc', 'node_expire');
-    _node_expire_form_alter_nodeform($ntypes, $form, $form_state, $form_id);
-  }
+function field_example_field_widget_info() {
+  return array(
+    'node_expire_default_widget' => array(
+      'label' => t('Default date picker and term reference'),
+      'field types' => array('node_expire_field'),
+    ),
+  );
 }
 
-/**
- * Implements hook_form_alter().
- *
- * Enable/Disable expiration feature on node types
- */
-function node_expire_form_node_type_form_alter(&$form, &$form_state) {
-  if (user_access('administer node expire')) {
-    $ntypes = variable_get('node_expire_ntypes', array());
-    $ntype  = $form['#node_type']->type;
-    $form['workflow']['node_expire'] = array(
-      '#title'         => t('Default expiration date'),
-      '#description'   => t('Default date to consider the node expired.') . ' ' . t('Format: PHP <a href="http://www.php.net/strtotime" target="_blank">strtotime format</a>.') . ' ' . t('Leave it blank if this content type never expires.'),
-      '#type'          => 'textfield',
-      '#default_value' => empty($ntypes[$ntype]['default']) ? '' : $ntypes[$ntype]['default'],
-    );
-    $form['workflow']['node_expire_max'] = array(
-      '#title'         => t('Expiration date limit'),
-      '#description'   => t('The max date to consider the node expired.') . ' ' . t('Format: PHP <a href="http://www.php.net/strtotime" target="_blank">strtotime format</a>.') . ' ' . t('Leave it blank if this there is no limit date.'),
-      '#type'          => 'textfield',
-      '#default_value' => empty($ntypes[$ntype]['max']) ? '' : $ntypes[$ntype]['max'],
-    );
-    $form['workflow']['node_expire_required'] = array(
-      '#title'         => t('Expiration date required'),
-      '#type'          => 'checkbox',
-      '#default_value' => !empty($ntypes[$ntype]['required']),
-    );
 
-    // Add special validate/submit functions
-    module_load_include('ntype.inc', 'node_expire');
-    $form['#validate'][]  = '_node_expire_form_node_type_form_alter_validate';
-    $form['#submit'][]    = '_node_expire_form_node_type_form_alter_submit';
-  }
-}
-
-/**
- * Implements hook_nodeapi().
- */
-function node_expire_nodeapi_OLD(&$node, $op, $a3 = NULL, $a4 = NULL) {
-  dpm('OLD');
-  // TODO Remaining code in this function needs to be moved to the appropriate new hook function.
-  // Only deal with node types that have the Node expire feature enabled
-  $ntypes = variable_get('node_expire_ntypes', array());
-  if (!$ntypes[$node->type]) {
-    return;
-  }
-  module_load_include('nodeapi.inc', 'node_expire');
-  _node_expire_nodeapi($ntypes, $node, $op, $a3, $a4);
-}
 
 /**
  * Implements hook_permission().
@@ -121,115 +97,3 @@ function node_expire_views_api() {
   );
 }
 
-/**
- *
- * @param $nids
- *   node ID that should set the expired flag.
- */
- /*
-function node_expire_set_expired($nid) {
-  // TODO Please convert this statement to the D7 database API syntax.
-  //db_query("UPDATE {node_expire} SET expired = '1', lastnotify = '" . REQUEST_TIME . "' WHERE nid = '" . $nid . "' AND (lastnotify = '0' || expired != '1')");
-  db_update('node_expire')
-    ->fields(array(
-	  'expired' => 1,
-	  'lastnotify' => REQUEST_TIME,
-	  ))
-	->condition('nid', $nid)
-	->condition(db_or()->condition('lastnotify', 0)->condition('expired',1, '!='))
-	->execute();
-}
-*/
-
-/**
- * Implementation of hook_nodeapi().
- */
-function node_expire_node_load($nodes, $types) {
-  
-  $result = db_select('node_expire', 'ne')
-	->fields('ne');
-  $result->condition('nid', array_keys($nodes), 'IN');
-  $result = $result->execute();
-  // Use the existing expiration data if present.
-  while($record = $result->fetchAssoc()) {
-    $nodes[$record['nid']]->expire = $record['expire'];
-    $nodes[$record['nid']]->expired = $record['expired'];
-    $nodes[$record['nid']]->lastnotify = $record['lastnotify'];
-  }
-}
-
-
-
-function node_expire_node_prepare($node) {
-      $ntypes = variable_get('node_expire_ntypes', array());
-      // To prevent default value 1969-12-31 check also $ntypes['default'].
-      if (!isset($node->expire) && $ntypes[$node->type]['default']) {
-        $node->expire = format_date(strtotime($ntypes[$node->type]['default']), 'custom', NODE_EXPIRE_FORMAT);
-      }
-      // This gives a way to users without edit exipration permission to update nodes with default expiration.
-      if (isset($node->expire) && !user_access('edit node expire')) {
-        $node->expire = format_date(strtotime($ntypes[$node->type]['default']), 'custom', NODE_EXPIRE_FORMAT);
-      }
-}
-
-
-function node_expire_node_validate($node, $form, &$form_state) {
-      // The only restriction we have is that the node can't expire in the past.
-	  $ntypes = variable_get('node_expire_ntypes', array());
-      if ($node->expire == '') {
-        if (!empty($ntypes[$node->type]['required']) && $ntypes[$node->type]['default']) {
-          form_set_error('expire_date', t('You must choose an expiration date.'));
-        }
-      }
-      elseif (!$expire = strtotime($node->expire) or $expire <= 0) {
-        form_set_error('expire_date', t('You have to specify a valid expiration date.'));
-      }
-      elseif ($expire <= REQUEST_TIME) {
-        //form_set_error('expire_date', t("You can't expire a node in the past!"));
-      }
-      elseif (!empty($ntypes[$node->type]['max']) and $expire > strtotime($ntypes[$node->type]['max'], $node->created)) {
-        form_set_error('expire_date', t('It must expire before %date.',
-        array('%date' => format_date(strtotime($ntypes[$node->type]['max'], $node->created), 'custom', NODE_EXPIRE_FORMAT))));
-      }
-}
-
-
-function node_expire_node_insert($node) {
-      // has the expiration been removed, or does it exist?
-      if (isset($node->expire)) {
-        db_delete('node_expire')
-          ->condition('nid', $node->nid)
-          ->execute();
-        // should we create a new record?
-        if ($node->expire) {
-          if (strtotime($node->expire)) {
-            $node->expire = strtotime($node->expire);
-          }
-          $node->expired = FALSE;
-          drupal_write_record('node_expire', $node);
-        }
-      }
-}
-
-function node_expire_node_update($node) {
-      // has the expiration been removed, or does it exist?
-      if (isset($node->expire)) {
-        db_delete('node_expire')
-          ->condition('nid', $node->nid)
-          ->execute();
-        // should we create a new record?
-        if ($node->expire) {
-          if (strtotime($node->expire)) {
-            $node->expire = strtotime($node->expire);
-          }
-          $node->expired = FALSE;
-          drupal_write_record('node_expire', $node);
-        }
-      }
-}
-
-function node_expire_node_delete(&$ntypes, &$node, $op, $a3 = NULL, $a4 = NULL) {
-      db_delete('node_expire')
-        ->condition('nid', $node->nid)
-        ->execute();
-}

@@ -24,40 +24,6 @@ function node_expire_install() {
   taxonomy_vocabulary_save($vocabulary);
 }
 
-/**
- * Implements hook_schema().
- */
-function node_expire_schema() {
-  $schema['node_expire'] = array(
-    'description' => 'Alerts administrators of possibly outdated materials, and optionally unpublishes them.',
-    'fields' => array(
-      'nid' => array(
-        'description' => 'Node ID from {node}.nid.',
-        'type'        => 'int',
-        'unsigned'    => TRUE,
-        'not null'    => TRUE
-      ),
-      'status' => array(
-        'type'        => 'int',
-        'size'        => 'tiny',
-        'default'     => 0,
-        'not null'    => TRUE
-      ),
-      'lastnotify' => array(
-        'type'        => 'int',
-        'default'     => 0,
-        'unsigned'    => TRUE,
-        'not null'    => TRUE
-      ),
-    ),
-    'primary key' => array('nid'),
-    'indexes' => array(
-      'expire_expired_lastnotify' => array('expire', 'expired', 'lastnotify'),
-    ),
-  );
-
-  return $schema;
-}
 
 function node_expire_field_schema($field) {
    return array(
@@ -74,7 +40,7 @@ function node_expire_field_schema($field) {
 	   'active' => array(
 		  'type' => 'int',
 		  'size' => 'tiny',
-		  'default' => 
+		  'default' => '1',
 		),
       ),
   );
@@ -86,8 +52,6 @@ function node_expire_field_schema($field) {
  */
 function node_expire_uninstall() {
 
-  // Delete global variable
-  variable_del('node_expire_ntypes');
 }
 
 
