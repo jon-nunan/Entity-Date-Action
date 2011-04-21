@@ -18,6 +18,11 @@ function node_expire_cron() {
   $time = REQUEST_TIME;
   // get all active fields
   
+  $fields = db_select('field_config', 'f')->fields('f',array('field_name'));
+  $fields->condition('type', 'node_expire_field', '=');
+  $fields = $fields->execute()->fetchAssoc();
+  watchdog('node expire', print_r($fields,true), NULL);
+  
   /*
   $result = db_select('node', 'n')->fields('n');
   $result->join('node_expire', 'ne', 'n.nid = ne.nid');
@@ -64,8 +69,10 @@ function node_expire_field_formatter_view($entity_type, $entity, $field, $instan
   switch ($display['type']) {
     // This formatter simply outputs the field as text and with a color.
     case 'node_expire_default_formatter':
+	  dpm($items);
       foreach ($items as $delta => $item) {
-        $element[$delta]['#markup'] = '<p> ' . $item['node_expire'] . '</p>';
+	  
+        $element[$delta]['#markup'] = '<p> ' . $item['date'] . '</p>';
       }
       break;
   }
@@ -100,27 +107,87 @@ function node_expire_field_widget_info() {
 
 function node_expire_field_widget_form(&$form, &$form_state, $field, $instance, $langcode, $items, $delta, $element) {
 
-     dpm($instance);
   switch ($instance['widget']['type']) {
 
    case 'node_expire_default_widget':
-     $element['node_expire'] = array(
-       '#type' => 'textfield',
-       '#title' => 'Action Date',
-       '#size' => 10,
-       '#default_value' => '',
-       '#attributes' => array('class' => array('date-entry')),
-       '#description' => t('The date to set off an action'),
-      );
+   
+     dpm($items);
+     // Provide a default date in the format YYYY-MM-DD HH:MM:SS.
+	 if ( isset($items[$delta]['date'])) {
+	   $date = $items[$delta]['date'];
+	 }else {
+	    $date = '31-12-2011 00:00:00';
+	 }
+	 
+	 if (isset($items[$delta]['tid'])) {
+	   $tid = $items[$delta]['tid'];
+	 } else {
+	   $tid = 'null';
+	 }
+	 dpm($tid);
+	 if(isset($items[$delta]['active'])) {
+	   $active = $items[$delta]['active'];
+	 } else {
+	   $active = '1';
+	 }
+    
+     // Provide a format using regular PHP format parts (see documentation on php.net).
+     // If you're using a date_select, the format will control the order of the date parts in the selector,
+     // rearrange them any way you like. Parts left out of the format will not be displayed to the user.
+     $format = 'd-m-Y H:i';
+     $element['node_expire'] = array();
+     $element += array (
+	   '#type' => 'fieldset',
+       '#element_validate' => array('node_expire_default_validate'),
+	 );
+	 $element['date'] = array();
+	 $element['date'] += array(
+       '#type' => 'date_popup',
+       '#default_value' => $date,
+	   '#date_format' => $format,
+       '#date_label_position' => 'within',
 
+      // '#description' => t('The date to set off an action'),
+      );
+	  $vid = variable_get('node_expire_default_vocab');
+	  $vocabulary = taxonomy_vocabulary_load($vid);
+	  $terms = taxonomy_get_tree($vid);
+	  $opt = array();
+	  $opt['null'] ="--Select--";
+	  foreach($terms as $term) {
+	    $opt[$term->tid] = $term->name;
+	  }
+	  $element['tid'] = array();
+	  $element['tid'] += array(
+        '#type' => 'select',
+        '#title'=> 'Rule',
+		'#options' => $opt,
+		'#default_value' => $tid,
+	  );
+	  
+	  $element['active'] = array();
+	  $element['active'] += array (
+	    '#type' => 'checkbox', 
+        '#title' => t('Active.'),
+		'#default_value' => $active,
+	  );
       break;
 
   }
   return $element;
 }
 
+/**
+ * Implements hook_field_is_empty().
+ */
+function node_expire_field_is_empty($item, $field) {
+  dpm($item);
+}
 
 
+function node_expire_default_validate($element, &$form_state){
+  //set values to valid datetime
+}
 
 /**
  * Implements hook_permission().
