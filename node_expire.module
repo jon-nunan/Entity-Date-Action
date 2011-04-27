@@ -41,8 +41,8 @@ function node_expire_cron() {
 	while($record = $result->fetchAssoc()) {
       watchdog('node expire result', $field . print_r($record,true), NULL);
 	  $node = node_load($record['entity_id']);
-	  $term = taxonomy_term_load($record[$field.'_tid']);
-	  rules_invoke_event('node_expired', $node, $term, $field, $record['delta']);
+	 // $term = taxonomy_term_load($record[$field.'_tid']);
+	  rules_invoke_event('node_expired', $node, $record[$field.'_tid'], $field, $record['delta']);
 	}
   }
   
@@ -175,7 +175,7 @@ function node_expire_field_widget_form(&$form, &$form_state, $field, $instance, 
 	  $vocabulary = taxonomy_vocabulary_load($vid);
 	  $terms = taxonomy_get_tree($vid);
 	  $opt = array();
-	  $opt['null'] ="--Select--";
+	  $opt[] ="--Select--";
 	  foreach($terms as $term) {
 	    $opt[$term->tid] = $term->name;
 	  }
@@ -203,7 +203,13 @@ function node_expire_field_widget_form(&$form, &$form_state, $field, $instance, 
  * Implements hook_field_is_empty().
  */
 function node_expire_field_is_empty($item, $field) {
-  dpm($item);
+
+  if (isset($item['date'])){
+    return false;
+  } else {
+    return true;
+  }
+  
 }
 
 

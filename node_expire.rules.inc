@@ -44,16 +44,22 @@ function node_expire_rules_action_info() {
 /**
  * Implements hook_rules_condition_info().
  * @ingroup rules
+ * TODO: make an entity to reduce num of variables
  */
 function node_expire_rules_condition_info() {
  $defaults = array(
    'parameter' => array(
-      'term' => array(
+      'term_list' => array(
         'type' => 'list<integer>',
 		'options list' => 'node_expire_rule_types',
         'label' => t('Rule term'),
         'save' => TRUE,
       ),
+	  'term' => array(
+	    'type' => 'integer',
+		'label' => t('Rule'),
+		'save' => TRUE,
+	  ),
     ),
     'group' => t('Rule type'),
   );
@@ -77,8 +83,8 @@ function node_expire_rules_event_info() {
 	  'group' => t('Node'),
 	  'variables' => array(
 	    'expired' => array('type' => 'node', 'label' => t('content expired')),
-		'term' => array('type' => 'taxonomy_term', 'label' => t('term')),
-		'field' => array('text' => 'text' , 'label' => t('field name')),
+		'term' => array('type' => 'integer', 'label' => t('term id')),
+		'field' => array('type' => 'text' , 'label' => t('field name')),
 		'delta' => array('type' => 'integer', 'label' => t('delta'))
 	  ),
     ),
@@ -167,6 +173,10 @@ function node_expire_rule_types () {
 }
 
 
-function node_expire_rules_rule_type($term) {
-  return TRUE;
+function node_expire_rules_rule_type($term_list, $term) {
+  watchdog('node expire rule', print_r($term_list, true), NULL);
+  watchdog('node expire rule2', print_r($term, true), NULL);
+  dpm($term_list);
+  dpm($term);
+  return in_array($term, $term_list);
 }
