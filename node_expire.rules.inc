@@ -18,8 +18,18 @@ function node_expire_rules_action_info() {
         'label' => t('Expired Node'),
         'save' => TRUE,
       ),
+	  'field_name' => array(
+	    'type' => 'text',
+        'label' => t('Field name'),
+        'save' => TRUE,
+	  ),
+	  'delta' => array(
+	    'type' => 'integer',
+        'label' => t('Field delta'),
+        'save' => TRUE,
+	  ),
     ),
-    'group' => t('Node'),
+    'group' => t('Date Rules'),
   );
 
   $items['set_active'] =$defaults + array(
@@ -34,10 +44,63 @@ function node_expire_rules_action_info() {
     'label'     => t('Update date'),
     'base'    => 'node_expire_update_lastnotify',
   );
-  $items['set_rule'] = $defaults + array (
+  $items['set_rule'] = array (
+    'parameter' => array(
+	  'node' => array(
+        'type' => 'node',
+        'label' => t('Expired Node'),
+        'save' => TRUE,
+      ),
+	  'field_name' => array(
+	    'type' => 'text',
+        'label' => t('Field name'),
+        'save' => TRUE,
+	  ),
+	  'delta' => array(
+	    'type' => 'integer',
+        'label' => t('Field delta'),
+        'save' => TRUE,
+	  ),
+	  'new_rule' =>array(
+	    'type' => 'list<integer>',
+		'options list' => 'node_expire_rule_types',
+		'label' => t('Rule TID'),
+		'save' => TRUE,
+	  ),
+	),
     'label' => t('Set rule category'),
 	'base' => 'node_expire_set_rule',
+	'group' => t('Date Rules'),
   );
+  
+   $items['add_days'] = array (
+    'parameter' => array(
+	  'node' => array(
+        'type' => 'node',
+        'label' => t('Expired Node'),
+        'save' => TRUE,
+      ),
+	  'field_name' => array(
+	    'type' => 'text',
+        'label' => t('Field name'),
+        'save' => TRUE,
+	  ),
+	  'delta' => array(
+	    'type' => 'integer',
+        'label' => t('Field delta'),
+        'save' => TRUE,
+	  ),
+	  'days_add' =>array(
+	    'type' => 'integer',
+		'label' => t('Days from now'),
+		'save' => TRUE,
+	  ),
+	),
+    'label' => t('Add days to date action field'),
+	'base' => 'node_expire_add_days',
+	'group' => t('Date Rules'),
+  );
+  
   return $items;
 }
 
@@ -92,21 +155,7 @@ function node_expire_rules_event_info() {
 }
 
 
-/**
- * Update lastnotify on nodes.
- *
- * @param $node
- *   Object. The Node object
- *   that should update lastnotify.
- */
-function node_expire_update_lastnotify($node) {
-  db_update('node_expire')
-    ->fields(array(
-	  'lastnotify' => REQUEST_TIME,
-    ))
-	->condition('nid', $node->nid)
-	->execute();
-}
+
 
 
 /**
@@ -121,45 +170,59 @@ function node_expire_rules_expired_check($node) {
 
 
 
-/**
- * Unset the "Expired" flag on nodes.
- *
- * @param $nids
- *   Object. The Node object with all node IDs
- *   that should unset the expired flag.
- */
-function node_expire_unset_expired($node) {
-  db_update('node_expire')
+
+
+function node_expire_set_active($node, $field, $delta) {
+  watchdog('node expire', 'set active', null);
+   /*db_update('field_data_'.$field)
     ->fields(array(
-	  'expired' => 0,
+	  $field.'_active' => 1,
 	  ))
-	->condition('nid', $node->nid)
+	->condition('entity_type', 'node')
+	->condition('entity_id', $node->nid)
+	->condition('delta', $delta)
+	->execute();
+	return false; */
+}
+
+
+function node_expire_unset_active($node, $field, $delta) {
+ db_update('field_data_'.$field)
+    ->fields(array(
+	  $field.'_active' => 0,
+	  ))
+	->condition('entity_type', 'node')
+	->condition('entity_id', $node->nid)
+	->condition('delta', $delta)
+	->execute();
+}
+
+function node_expire_set_rule($node, $field, $delta, $new_rule) {
+   watchdog('node expire', 'setting rule', null);
+   $upd = db_update('field_data_'.$field)
+    ->fields(array(
+	  $field.'_tid' => $new_rule,
+	  ))
+	->condition('entity_type', 'node')
+	->condition('entity_id', $node->nid)
+	->condition('delta', $delta)
+	->execute();
+	watchdog('node expire rule eval', print_r($upd, true), NULL);
+}
+
+function node_expire_add_days($node, $field, $delta, $day_add) {
+  $new_date = REQUEST_TIME + $day_add*24*60*60;
+   db_update('field_data_'.$field)
+    ->fields(array(
+	  $field.'_date' => date($new_date, NODE_EXPIRE_FORMAT),
+	  ))
+	->condition('entity_type', 'node')
+	->condition('entity_id', $node->nid)
+	->condition('delta', $delta)
 	->execute();
 }
 
 
-function node_expire_set_expired($node) {
-  db_update('node_expire')
-    ->fields(array(
-	  'expired' => 1,
-	  ))
-	->condition('nid', $node->nid)
-	->execute();
-}
-
-
-function node_expire_set_active() {
-
-}
-
-
-function node_expire_unset_active() {
-
-}
-
-function node_expire_set_rule() {
-
-}
 
 function node_expire_rule_types () {
   $vid = variable_get('node_expire_default_vocab');
@@ -179,4 +242,8 @@ function node_expire_rules_rule_type($term_list, $term) {
   dpm($term_list);
   dpm($term);
   return in_array($term, $term_list);
+}
+
+function node_expire_update_lastnotify() {
+
 }
