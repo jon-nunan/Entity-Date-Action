@@ -25,13 +25,27 @@ DEFINE('NODE_EXPIRE_FORMAT_JS', 'yy-mm-dd');
  */
 function node_expire_cron() {
   watchdog('node expire', 'Checking for nodes to expire', NULL);
-  $time = REQUEST_TIME;
+  $time = date(NODE_EXPIRE_FORMAT, REQUEST_TIME);
   // get all active fields
   
   $fields = db_select('field_config', 'f')->fields('f',array('field_name'));
   $fields->condition('type', 'node_expire_field', '=');
   $fields = $fields->execute()->fetchAssoc();
   watchdog('node expire', print_r($fields,true), NULL);
+  watchdog('node expire time', $time, NULL);
+  foreach($fields as $field) {
+    $result = db_select('field_data_'.$field, 'fd')->fields('fd', array('entity_type', 'entity_id', $field.'_date', $field.'_tid', $field.'_active', 'delta'));
+	$result->condition($field.'_date', $time, '<=');
+	//$result->condition($field.'_active', '1', '=');
+    $result = $result->execute();
+	while($record = $result->fetchAssoc()) {
+      watchdog('node expire result', $field . print_r($record,true), NULL);
+	  $node = node_load($record['entity_id']);
+	  $term = taxonomy_term_load($record[$field.'_tid']);
+	  rules_invoke_event('node_expired', $node, $term, $field, $record['delta']);
+	}
+  }
+  
   
   /*
   $result = db_select('node', 'n')->fields('n');
@@ -79,7 +93,6 @@ function node_expire_field_formatter_view($entity_type, $entity, $field, $instan
   switch ($display['type']) {
     // This formatter simply outputs the field as text and with a color.
     case 'node_expire_default_formatter':
-	  dpm($items);
       foreach ($items as $delta => $item) {
 	  
         $element[$delta]['#markup'] = '<p> ' . $item['date'] . '</p>';
@@ -120,8 +133,7 @@ function node_expire_field_widget_form(&$form, &$form_state, $field, $instance, 
   switch ($instance['widget']['type']) {
 
    case 'node_expire_default_widget':
-   
-     dpm($items);
+
      // Provide a default date in the format YYYY-MM-DD HH:MM:SS.
 	 if ( isset($items[$delta]['date'])) {
 	   $date = $items[$delta]['date'];
@@ -134,7 +146,7 @@ function node_expire_field_widget_form(&$form, &$form_state, $field, $instance, 
 	 } else {
 	   $tid = 'null';
 	 }
-	 dpm($tid);
+
 	 if(isset($items[$delta]['active'])) {
 	   $active = $items[$delta]['active'];
 	 } else {

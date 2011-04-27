@@ -22,17 +22,21 @@ function node_expire_rules_action_info() {
     'group' => t('Node'),
   );
 
-  $items['unset_expired'] =$defaults + array(
-    'label'     => t('Unset the expired flag'),
-    'base'    => 'node_expire_unset_expired',
+  $items['set_active'] =$defaults + array(
+    'label'     => t('Set the active flag'),
+    'base'    => 'node_expire_set_active',
   );
-  $items['set_expired'] = $defaults + array(
-    'label' => t('Set the expired flag'),
-    'base' => 'node_expire_set_expired',
+  $items['set_inactive'] = $defaults + array(
+    'label' => t('Unset the active flag'),
+    'base' => 'node_expire_unset_active',
   );	
-  $items['update_lastnotify'] = $defaults + array(
-    'label'     => t('Update lastnotify'),
+  $items['set_date'] = $defaults + array(
+    'label'     => t('Update date'),
     'base'    => 'node_expire_update_lastnotify',
+  );
+  $items['set_rule'] = $defaults + array (
+    'label' => t('Set rule category'),
+	'base' => 'node_expire_set_rule',
   );
   return $items;
 }
@@ -44,38 +48,20 @@ function node_expire_rules_action_info() {
 function node_expire_rules_condition_info() {
  $defaults = array(
    'parameter' => array(
-      'node' => array(
-        'type' => 'node',
-        'label' => t('Expired Node'),
+      'term' => array(
+        'type' => 'list<integer>',
+		'options list' => 'node_expire_rule_types',
+        'label' => t('Rule term'),
         'save' => TRUE,
       ),
     ),
-    'group' => t('Node'),
+    'group' => t('Rule type'),
   );
 
-  $items['node_expire_rules_expired_check'] =$defaults + array(
-    'label'     => t('Content is expired'),
-	'help'      => 'Evaluates to TRUE, if the given content has one of the selected content types.',
-    'base'    => 'node_expire_rules_expired_check',
-  );
-
-  $items['node_expire_rules_expired_check_lastnotify'] = array(
-    'label'     => t('Content is expired: Check lastnotify'),
-	'help'      => 'Evaluates to TRUE, if the given content is expired and lastnotified is older than the days value.',
-	'parameter' => array(
-      'node' => array(
-        'type' => 'node',
-        'label' => t('Expired Node'),
-        'save' => TRUE,
-      ),
-	  'days' => array(
-	    'type' => 'integer',
-		'label' => 'Days before sending followup reminders',
-		'save' => TRUE,
-	  ),
-    ),
-    'base'  => 'node_expire_rules_expired_check_lastnotify',
-	'group' => t('Node'),
+  $items['node_expire_rules_rule_type'] =$defaults + array(
+    'label'     => t('Node expire has type'),
+	'help'      => 'Evaluates to TRUE, if the provided term matches the rule term.',
+    'base'    => 'node_expire_rules_rule_type',
   );
   return $items;
 }
@@ -91,6 +77,9 @@ function node_expire_rules_event_info() {
 	  'group' => t('Node'),
 	  'variables' => array(
 	    'expired' => array('type' => 'node', 'label' => t('content expired')),
+		'term' => array('type' => 'taxonomy_term', 'label' => t('term')),
+		'field' => array('text' => 'text' , 'label' => t('field name')),
+		'delta' => array('type' => 'integer', 'label' => t('delta'))
 	  ),
     ),
   );
@@ -124,15 +113,6 @@ function node_expire_rules_expired_check($node) {
   return (!empty($node->expire) && $node->expire <= REQUEST_TIME && $node->expired == 1);
 }
 
-/**
- * Check if the node lastnotify is greater than 
- * or equal to days supplied.
- * @param $node
- *   Object. The Node object.
- */
-function node_expire_rules_expired_check_lastnotify($node, $days) {
-  return ($node->lastnotify <= (REQUEST_TIME - ($days * 24 * 60 * 60)));
-}
 
 
 /**
@@ -161,3 +141,32 @@ function node_expire_set_expired($node) {
 	->execute();
 }
 
+
+function node_expire_set_active() {
+
+}
+
+
+function node_expire_unset_active() {
+
+}
+
+function node_expire_set_rule() {
+
+}
+
+function node_expire_rule_types () {
+  $vid = variable_get('node_expire_default_vocab');
+  $terms = taxonomy_get_tree($vid);
+  $options = array();
+  foreach($terms as $term) {
+    $options[$term->tid] = $term->name;
+  }
+
+  return $options;
+}
+
+
+function node_expire_rules_rule_type($term) {
+  return TRUE;
+}
