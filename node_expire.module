@@ -36,7 +36,7 @@ function node_expire_cron() {
   foreach($fields as $field) {
     $result = db_select('field_data_'.$field, 'fd')->fields('fd', array('entity_type', 'entity_id', $field.'_date', $field.'_tid', $field.'_active', 'delta'));
 	$result->condition($field.'_date', $time, '<=');
-	//$result->condition($field.'_active', '1', '=');
+	$result->condition($field.'_active', '1', '=');
     $result = $result->execute();
 	while($record = $result->fetchAssoc()) {
       watchdog('node expire result', $field . print_r($record,true), NULL);
@@ -45,23 +45,6 @@ function node_expire_cron() {
 	  rules_invoke_event('node_expired', $node, $record[$field.'_tid'], $field, $record['delta']);
 	}
   }
-  
-  
-  /*
-  $result = db_select('node', 'n')->fields('n');
-  $result->join('node_expire', 'ne', 'n.nid = ne.nid');
-  $result->condition('ne.expire', $time, '<=');
-  $result = $result->execute();
-  $nids = array();
-  while($node = $result->fetchAssoc()) {
-      watchdog('node expire', 'Expired node ='.$node['nid'], NULL);
-      $nids[] = $node['nid'];
-     // node_expire_set_expired($node['nid']);
-      $node = node_load($node['nid']);
-	  $author = user_load($node->uid);
-      rules_invoke_event('node_expired', &$node, $author);
-  }
-  */
 }
 
 function node_expire_field_info() {
@@ -89,13 +72,16 @@ function node_expire_field_formatter_info() {
 
 function node_expire_field_formatter_view($entity_type, $entity, $field, $instance, $langcode, $items, $display) {
   $element = array();
-
+  $account = $GLOBALS['user'];
+  if (!user_access('edit node expire', $account)) {
+    return $element;
+  }
   switch ($display['type']) {
     // This formatter simply outputs the field as text and with a color.
     case 'node_expire_default_formatter':
       foreach ($items as $delta => $item) {
-	  
-        $element[$delta]['#markup'] = '<p> ' . $item['date'] . '</p>';
+	    $term = taxonomy_term_load($item['tid']);
+        $element[$delta]['#markup'] = '<p> '. $term->name .': ' . $item['date'] . '</p>';
       }
       break;
   }

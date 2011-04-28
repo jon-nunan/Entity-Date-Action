@@ -173,53 +173,35 @@ function node_expire_rules_expired_check($node) {
 
 
 function node_expire_set_active($node, $field, $delta) {
-  watchdog('node expire', 'set active', null);
-   /*db_update('field_data_'.$field)
-    ->fields(array(
-	  $field.'_active' => 1,
-	  ))
-	->condition('entity_type', 'node')
-	->condition('entity_id', $node->nid)
-	->condition('delta', $delta)
-	->execute();
-	return false; */
+  $date_action = $node->$field;
+  $date_action['und'][$delta]['active'] = 1;
+  $node->$field = $date_action;
+  node_save($node);
 }
 
 
 function node_expire_unset_active($node, $field, $delta) {
- db_update('field_data_'.$field)
-    ->fields(array(
-	  $field.'_active' => 0,
-	  ))
-	->condition('entity_type', 'node')
-	->condition('entity_id', $node->nid)
-	->condition('delta', $delta)
-	->execute();
+  $date_action = $node->$field;
+  $date_action['und'][$delta]['active'] = 0;
+  $node->$field = $date_action;
+  node_save($node);
 }
 
 function node_expire_set_rule($node, $field, $delta, $new_rule) {
-   watchdog('node expire', 'setting rule', null);
-   $upd = db_update('field_data_'.$field)
-    ->fields(array(
-	  $field.'_tid' => $new_rule,
-	  ))
-	->condition('entity_type', 'node')
-	->condition('entity_id', $node->nid)
-	->condition('delta', $delta)
-	->execute();
-	watchdog('node expire rule eval', print_r($upd, true), NULL);
+   $date_action = $node->$field;
+   $date_action['und'][$delta]['tid'] = array_pop($new_rule);
+   $node->$field = $date_action;
+   node_save($node);
+   // return false, otherwise an error is thrown. Not sure why though.
+   return false;
 }
 
 function node_expire_add_days($node, $field, $delta, $day_add) {
   $new_date = REQUEST_TIME + $day_add*24*60*60;
-   db_update('field_data_'.$field)
-    ->fields(array(
-	  $field.'_date' => date($new_date, NODE_EXPIRE_FORMAT),
-	  ))
-	->condition('entity_type', 'node')
-	->condition('entity_id', $node->nid)
-	->condition('delta', $delta)
-	->execute();
+  $date_action = $node->$field;
+  $date_action['und'][$delta]['date'] = date("Y-m-d H:i:s", $new_date);
+  $node->$field = $date_action;
+  node_save($node);
 }
 
 

@@ -23,7 +23,7 @@ function node_expire_install() {
   taxonomy_vocabulary_save($vocabulary);
   $vid = $vocabulary->vid;
   variable_set('node_expire_default_vocab',$vid);
-  $terms = array('Send reminder email', 'Publish node', 'Un-publish node');
+  $terms = array('Send reminder email', 'Publish content', 'Un-publish content');
   foreach($terms as $term) {
     $t = (object) array(
 	  'vid'=>$vid,
