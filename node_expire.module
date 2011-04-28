@@ -30,17 +30,23 @@ function node_expire_cron() {
   
   $fields = db_select('field_config', 'f')->fields('f',array('field_name'));
   $fields->condition('type', 'node_expire_field', '=');
-  $fields = $fields->execute()->fetchAssoc();
+  $fields = $fields->execute();
   watchdog('node expire', print_r($fields,true), NULL);
   watchdog('node expire time', $time, NULL);
-  foreach($fields as $field) {
-    $result = db_select('field_data_'.$field, 'fd')->fields('fd', array('entity_type', 'entity_id', $field.'_date', $field.'_tid', $field.'_active', 'delta'));
+  
+  while($field_arr = $fields->fetchAssoc()) {
+    $field = $field_arr['field_name'];
+    watchdog('node expire check', print_r($field, true), null);
+	
+    $result = db_select('field_data_'.$field, 'fd')->fields('fd', array('entity_type', 'entity_id', 'revision_id', $field.'_date', $field.'_tid', $field.'_active', 'delta'));
 	$result->condition($field.'_date', $time, '<=');
 	$result->condition($field.'_active', '1', '=');
     $result = $result->execute();
 	while($record = $result->fetchAssoc()) {
-      watchdog('node expire result', $field . print_r($record,true), NULL);
-	  $node = node_load($record['entity_id']);
+	  // node_load doesn't get menu data?!
+	  $node = node_load($record['entity_id'], $record['revision_id']);
+	  node_object_prepare($node);
+	  watchdog('node expire result node', $field . print_r($node,true), NULL);
 	 // $term = taxonomy_term_load($record[$field.'_tid']);
 	  rules_invoke_event('node_expired', $node, $record[$field.'_tid'], $field, $record['delta']);
 	}

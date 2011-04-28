@@ -21,12 +21,10 @@ function node_expire_rules_action_info() {
 	  'field_name' => array(
 	    'type' => 'text',
         'label' => t('Field name'),
-        'save' => TRUE,
 	  ),
 	  'delta' => array(
 	    'type' => 'integer',
         'label' => t('Field delta'),
-        'save' => TRUE,
 	  ),
     ),
     'group' => t('Date Rules'),
@@ -155,53 +153,75 @@ function node_expire_rules_event_info() {
 }
 
 
-
-
-
-/**
- * Check if the node has the the "Expired" flag on.
- *
- * @param $node
- *   Object. The Node object.
- */
-function node_expire_rules_expired_check($node) {
-  return (!empty($node->expire) && $node->expire <= REQUEST_TIME && $node->expired == 1);
-}
-
-
-
+/*
+TODO: remove ugly admin hack, should only have permissions it needs!
+*/
 
 
 function node_expire_set_active($node, $field, $delta) {
+  global $user;
+  $current_user = $user;
+  //below, ew.
+  $user = user_load(1);
+
   $date_action = $node->$field;
   $date_action['und'][$delta]['active'] = 1;
   $node->$field = $date_action;
   node_save($node);
+  
+  //switch back
+  $user = $current_user;
 }
 
-
 function node_expire_unset_active($node, $field, $delta) {
+  global $user;
+  $current_user = $user;
+  //below, ew.
+  $user = user_load(1);
+  
   $date_action = $node->$field;
   $date_action['und'][$delta]['active'] = 0;
   $node->$field = $date_action;
-  node_save($node);
+  watchdog('node expire', 'unsetting active: '.$user->name .'NODE: '.print_r($node,true), null);
+  //node_save($node);
+  
+  //switch back
+  $user = $current_user;
 }
 
 function node_expire_set_rule($node, $field, $delta, $new_rule) {
+  global $user;
+  $current_user = $user;
+  //below, ew.
+  $user = user_load(1);
+  
    $date_action = $node->$field;
    $date_action['und'][$delta]['tid'] = array_pop($new_rule);
    $node->$field = $date_action;
    node_save($node);
+   
+   //switch back
+   $user = $current_user;
+   
    // return false, otherwise an error is thrown. Not sure why though.
    return false;
 }
 
 function node_expire_add_days($node, $field, $delta, $day_add) {
+  global $user;
+  $current_user = $user;
+  //below, ew.
+  $user = user_load(1);
+  
   $new_date = REQUEST_TIME + $day_add*24*60*60;
   $date_action = $node->$field;
   $date_action['und'][$delta]['date'] = date("Y-m-d H:i:s", $new_date);
   $node->$field = $date_action;
   node_save($node);
+  
+  //switch back
+  $user = $current_user;
+  
 }
 
 
@@ -219,10 +239,6 @@ function node_expire_rule_types () {
 
 
 function node_expire_rules_rule_type($term_list, $term) {
-  watchdog('node expire rule', print_r($term_list, true), NULL);
-  watchdog('node expire rule2', print_r($term, true), NULL);
-  dpm($term_list);
-  dpm($term);
   return in_array($term, $term_list);
 }
 
