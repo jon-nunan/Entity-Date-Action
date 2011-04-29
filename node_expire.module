@@ -16,7 +16,7 @@
  * Set a timer into your content, allowing you to perform customized actions.
  */
 
-DEFINE('NODE_EXPIRE_FORMAT',     'Y-m-d');
+DEFINE('NODE_EXPIRE_FORMAT',     'd-m-Y H:i');
 DEFINE('NODE_EXPIRE_FORMAT_JS', 'yy-mm-dd');
 
 /**
@@ -24,20 +24,16 @@ DEFINE('NODE_EXPIRE_FORMAT_JS', 'yy-mm-dd');
  *  TODO: update this to look for fields
  */
 function node_expire_cron() {
-  watchdog('node expire', 'Checking for nodes to expire', NULL);
   $time = date(NODE_EXPIRE_FORMAT, REQUEST_TIME);
   // get all active fields
   
   $fields = db_select('field_config', 'f')->fields('f',array('field_name'));
   $fields->condition('type', 'node_expire_field', '=');
   $fields = $fields->execute();
-  watchdog('node expire', print_r($fields,true), NULL);
-  watchdog('node expire time', $time, NULL);
+
   
   while($field_arr = $fields->fetchAssoc()) {
     $field = $field_arr['field_name'];
-    watchdog('node expire check', print_r($field, true), null);
-	
     $result = db_select('field_data_'.$field, 'fd')->fields('fd', array('entity_type', 'entity_id', 'revision_id', $field.'_date', $field.'_tid', $field.'_active', 'delta'));
 	$result->condition($field.'_date', $time, '<=');
 	$result->condition($field.'_active', '1', '=');
@@ -46,7 +42,10 @@ function node_expire_cron() {
 	  // node_load doesn't get menu data?!
 	  $node = node_load($record['entity_id'], $record['revision_id']);
 	  node_object_prepare($node);
-	  watchdog('node expire result node', $field . print_r($node,true), NULL);
+	  if(isset($node->menu['mlid'])){
+	    $node->menu['enabled'] = true;
+	  }
+	  watchdog('node expire', 'Date action on: ' . $node->title, NULL);
 	 // $term = taxonomy_term_load($record[$field.'_tid']);
 	  rules_invoke_event('node_expired', $node, $record[$field.'_tid'], $field, $record['delta']);
 	}
@@ -148,7 +147,6 @@ function node_expire_field_widget_form(&$form, &$form_state, $field, $instance, 
      // Provide a format using regular PHP format parts (see documentation on php.net).
      // If you're using a date_select, the format will control the order of the date parts in the selector,
      // rearrange them any way you like. Parts left out of the format will not be displayed to the user.
-     $format = 'd-m-Y H:i';
      $element['node_expire'] = array();
      $element += array (
 	   '#type' => 'fieldset',
@@ -158,7 +156,7 @@ function node_expire_field_widget_form(&$form, &$form_state, $field, $instance, 
 	 $element['date'] += array(
        '#type' => 'date_popup',
        '#default_value' => $date,
-	   '#date_format' => $format,
+	   '#date_format' => NODE_EXPIRE_FORMAT,
        '#date_label_position' => 'within',
 
       // '#description' => t('The date to set off an action'),

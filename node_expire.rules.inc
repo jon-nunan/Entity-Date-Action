@@ -159,68 +159,36 @@ TODO: remove ugly admin hack, should only have permissions it needs!
 
 
 function node_expire_set_active($node, $field, $delta) {
-  global $user;
-  $current_user = $user;
-  //below, ew.
-  $user = user_load(1);
-
   $date_action = $node->$field;
   $date_action['und'][$delta]['active'] = 1;
   $node->$field = $date_action;
   node_save($node);
-  
-  //switch back
-  $user = $current_user;
 }
 
 function node_expire_unset_active($node, $field, $delta) {
-  global $user;
-  $current_user = $user;
-  //below, ew.
-  $user = user_load(1);
-  
   $date_action = $node->$field;
   $date_action['und'][$delta]['active'] = 0;
   $node->$field = $date_action;
-  watchdog('node expire', 'unsetting active: '.$user->name .'NODE: '.print_r($node,true), null);
-  //node_save($node);
-  
-  //switch back
-  $user = $current_user;
+  node_save($node);
 }
 
 function node_expire_set_rule($node, $field, $delta, $new_rule) {
-  global $user;
-  $current_user = $user;
-  //below, ew.
-  $user = user_load(1);
-  
    $date_action = $node->$field;
    $date_action['und'][$delta]['tid'] = array_pop($new_rule);
    $node->$field = $date_action;
    node_save($node);
-   
-   //switch back
-   $user = $current_user;
-   
+
    // return false, otherwise an error is thrown. Not sure why though.
    return false;
 }
 
 function node_expire_add_days($node, $field, $delta, $day_add) {
-  global $user;
-  $current_user = $user;
-  //below, ew.
-  $user = user_load(1);
-  
+
   $new_date = REQUEST_TIME + $day_add*24*60*60;
   $date_action = $node->$field;
   $date_action['und'][$delta]['date'] = date("Y-m-d H:i:s", $new_date);
   $node->$field = $date_action;
   node_save($node);
-  
-  //switch back
-  $user = $current_user;
   
 }
 
