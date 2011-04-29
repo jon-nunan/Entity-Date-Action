@@ -26,7 +26,6 @@ DEFINE('NODE_EXPIRE_FORMAT_JS', 'yy-mm-dd');
 function node_expire_cron() {
   $time = date(NODE_EXPIRE_FORMAT, REQUEST_TIME);
   // get all active fields
-  
   $fields = db_select('field_config', 'f')->fields('f',array('field_name'));
   $fields->condition('type', 'node_expire_field', '=');
   $fields = $fields->execute();

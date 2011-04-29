@@ -209,7 +209,3 @@ function node_expire_rule_types () {
 function node_expire_rules_rule_type($term_list, $term) {
   return in_array($term, $term_list);
 }
-
-function node_expire_update_lastnotify() {
-
-}
