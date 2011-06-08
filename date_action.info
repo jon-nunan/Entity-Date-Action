@@ -1,0 +1,11 @@
+core = 7.x
+dependencies[]  = "rules"
+dependencies[]  = "date"
+description     = "A field type that allows actions to occur on a set date."
+name            = "Date action"
+package         = "Workflow"
+
+version = "7.x-1.0"
+core = 7.x
+project = "date_action"
+

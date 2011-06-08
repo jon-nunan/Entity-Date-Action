@@ -1,5 +1,5 @@
 <?php
-// $Id: node_expire.module,v 1.9.2.6 2010/12/11 18:42:07 vikramy Exp $
+// $Id: date_action.module,v 1.9.2.6 2010/12/11 18:42:07 vikramy Exp $
 
 /*
  *TODO: change module name to someting entity and time related
@@ -16,18 +16,18 @@
  * Set a timer into your content, allowing you to perform customized actions.
  */
 
-DEFINE('NODE_EXPIRE_FORMAT',     'd-m-Y H:i');
-DEFINE('NODE_EXPIRE_FORMAT_JS', 'yy-mm-dd');
+DEFINE('DATE_ACTION_FORMAT',     'd-m-Y H:i');
+DEFINE('DATE_ACTION_FORMAT_JS', 'yy-mm-dd');
 
 /**
  * Implements hook_cron().
  *  TODO: update this to look for fields
  */
-function node_expire_cron() {
-  $time = date(NODE_EXPIRE_FORMAT, REQUEST_TIME);
+function date_action_cron() {
+  $time = date(DATE_ACTION_FORMAT, REQUEST_TIME);
   // get all active fields
   $fields = db_select('field_config', 'f')->fields('f',array('field_name'));
-  $fields->condition('type', 'node_expire_field', '=');
+  $fields->condition('type', 'date_action_field', '=');
   $fields = $fields->execute();
 
   
@@ -46,35 +46,35 @@ function node_expire_cron() {
 	  }
 	  watchdog('node expire', 'Date action on: ' . $node->title, NULL);
 	 // $term = taxonomy_term_load($record[$field.'_tid']);
-	  rules_invoke_event('node_expired', $node, $record[$field.'_tid'], $field, $record['delta']);
+	  rules_invoke_event('date_actiond', $node, $record[$field.'_tid'], $field, $record['delta']);
 	}
   }
 }
 
-function node_expire_field_info() {
+function date_action_field_info() {
   return array(
-    'node_expire_field' => array(
+    'date_action_field' => array(
       'label' => t('Date action'), 
       'description' => t('Set a date to perform an action (e.g. expire a node after a certain date).'), 
-      'default_widget' => 'node_expire_default_widget', 
-      'default_formatter' => 'node_expire_default_formatter',
+      'default_widget' => 'date_action_default_widget', 
+      'default_formatter' => 'date_action_default_formatter',
     ),
   );
 }
 
 
-function node_expire_field_formatter_info() {
+function date_action_field_formatter_info() {
   return array(
     // This formatter just displays the hex value in the color indicated.
-    'node_expire_default_formatter' => array(
+    'date_action_default_formatter' => array(
       'label' => t('Displays countodwn to authorised users'),
-      'field types' => array('node_expire_field'),
+      'field types' => array('date_action_field'),
     ),
   );
 }
 
 
-function node_expire_field_formatter_view($entity_type, $entity, $field, $instance, $langcode, $items, $display) {
+function date_action_field_formatter_view($entity_type, $entity, $field, $instance, $langcode, $items, $display) {
   $element = array();
   $account = $GLOBALS['user'];
   if (!user_access('edit node expire', $account)) {
@@ -82,7 +82,7 @@ function node_expire_field_formatter_view($entity_type, $entity, $field, $instan
   }
   switch ($display['type']) {
     // This formatter simply outputs the field as text and with a color.
-    case 'node_expire_default_formatter':
+    case 'date_action_default_formatter':
       foreach ($items as $delta => $item) {
 	    $term = taxonomy_term_load($item['tid']);
         $element[$delta]['#markup'] = '<p> '. $term->name .': ' . $item['date'] . '</p>';
@@ -100,11 +100,11 @@ function node_expire_field_formatter_view($entity_type, $entity, $field, $instan
  * One widget is provided.
  * - A simple datepicker with a term reference field
  */
-function node_expire_field_widget_info() {
+function date_action_field_widget_info() {
   return array(
-    'node_expire_default_widget' => array(
+    'date_action_default_widget' => array(
       'label' => t('Default date picker'),
-      'field types' => array('node_expire_field'),
+      'field types' => array('date_action_field'),
     ),
   );
 }
@@ -114,15 +114,15 @@ function node_expire_field_widget_info() {
  *
  * Only one widget type implemented currently.
  *
- * The 'node_expire_default_widget' shows a date field, and a term reference field
+ * The 'date_action_default_widget' shows a date field, and a term reference field
  *
  */
 
-function node_expire_field_widget_form(&$form, &$form_state, $field, $instance, $langcode, $items, $delta, $element) {
+function date_action_field_widget_form(&$form, &$form_state, $field, $instance, $langcode, $items, $delta, $element) {
 
   switch ($instance['widget']['type']) {
 
-   case 'node_expire_default_widget':
+   case 'date_action_default_widget':
 
      // Provide a default date in the format YYYY-MM-DD HH:MM:SS.
 	 if ( isset($items[$delta]['date'])) {
@@ -146,21 +146,21 @@ function node_expire_field_widget_form(&$form, &$form_state, $field, $instance, 
      // Provide a format using regular PHP format parts (see documentation on php.net).
      // If you're using a date_select, the format will control the order of the date parts in the selector,
      // rearrange them any way you like. Parts left out of the format will not be displayed to the user.
-     $element['node_expire'] = array();
+     $element['date_action'] = array();
      $element += array (
 	   '#type' => 'fieldset',
-       '#element_validate' => array('node_expire_default_validate'),
+       '#element_validate' => array('date_action_default_validate'),
 	 );
 	 $element['date'] = array();
 	 $element['date'] += array(
        '#type' => 'date_popup',
        '#default_value' => $date,
-	   '#date_format' => NODE_EXPIRE_FORMAT,
+	   '#date_format' => DATE_ACTION_FORMAT,
        '#date_label_position' => 'within',
 
       // '#description' => t('The date to set off an action'),
       );
-	  $vid = variable_get('node_expire_default_vocab');
+	  $vid = variable_get('date_action_default_vocab');
 	  $vocabulary = taxonomy_vocabulary_load($vid);
 	  $terms = taxonomy_get_tree($vid);
 	  $opt = array();
@@ -191,7 +191,7 @@ function node_expire_field_widget_form(&$form, &$form_state, $field, $instance, 
 /**
  * Implements hook_field_is_empty().
  */
-function node_expire_field_is_empty($item, $field) {
+function date_action_field_is_empty($item, $field) {
 
   if (isset($item['date'])){
     return false;
@@ -202,14 +202,14 @@ function node_expire_field_is_empty($item, $field) {
 }
 
 
-function node_expire_default_validate($element, &$form_state){
+function date_action_default_validate($element, &$form_state){
   //set values to valid datetime
 }
 
 /**
  * Implements hook_permission().
  */
-function node_expire_permission() {
+function date_action_permission() {
   return array(
     'administer node expire' => array(
       'title' => t('administer node expire'),
@@ -225,10 +225,10 @@ function node_expire_permission() {
 /**
  * Implements hook_views_api().
  */
-function node_expire_views_api() {
+function date_action_views_api() {
   return array(
     'api' => 2,
-    'path' => drupal_get_path('module', 'node_expire'),
+    'path' => drupal_get_path('module', 'date_action'),
   );
 }
 

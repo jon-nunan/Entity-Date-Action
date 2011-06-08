@@ -1,6 +1,6 @@
 // $Id: node_expire.js,v 1.3 2009/01/29 21:02:05 brmassa Exp $
 
-Drupal.behaviors.nodeExpire = {
+Drupal.behaviors.dateAction = {
   attach: function(context, settings) {
     var max = settings.maxDate;
     if (max) {

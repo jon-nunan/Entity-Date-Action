@@ -1,5 +1,4 @@
 <?php
-// $Id: node_expire.install,v 1.5.2.5 2010/12/11 18:42:06 vikramy Exp $
 
 /**
  * @file
@@ -9,7 +8,7 @@
 /**
  * Implements hook_install().
  */
-function node_expire_install() {
+function date_action_install() {
   
   // Create a default vocabulary named "Expiry rule".
   $description = st('Use to choose what action should be taken on the chosen date.');
@@ -22,7 +21,7 @@ function node_expire_install() {
   );
   taxonomy_vocabulary_save($vocabulary);
   $vid = $vocabulary->vid;
-  variable_set('node_expire_default_vocab',$vid);
+  variable_set('date_action_default_vocab',$vid);
   $terms = array('Send reminder email', 'Publish content', 'Un-publish content');
   foreach($terms as $term) {
     $t = (object) array(
@@ -38,7 +37,7 @@ function node_expire_install() {
 }
 
 
-function node_expire_field_schema($field) {
+function date_action_field_schema($field) {
    return array(
      'columns' => array(
        'date' => array(
@@ -66,12 +65,12 @@ function node_expire_field_schema($field) {
 /**
  * Implements hook_uninstall().
  */
-function node_expire_uninstall() {
+function date_action_uninstall() {
   //uninstall vocab
-  $vid = variable_get('node_expire_default_vocab');
+  $vid = variable_get('date_action_default_vocab');
   if(isset($vid)) {
 	taxonomy_vocabulary_delete($vid);
-	variable_del('node_expire_default_vocab');
+	variable_del('date_action_default_vocab');
 	drupal_set_message('Taxonomy "Expiry Rule" deleted.');
   } else {
     drupal_set_message('Taxonomy "Expiry Rule" not found, no vocabs removed:'.$vid);

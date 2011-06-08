@@ -1,5 +1,5 @@
 <?php
-// $Id: node_expire.views.inc,v 1.1 2009/01/26 23:56:49 brmassa Exp $
+// $Id: date_action.views.inc,v 1.1 2009/01/26 23:56:49 brmassa Exp $
 
 /**
  * @file
@@ -9,17 +9,17 @@
 /**
  * Implements hook_views_data().
  */
-function node_expire_views_data() {
+function date_action_views_data() {
   // Join to 'node' as a base table.
-  $data['node_expire']['table']['group']  = t('Node');
-  $data['node_expire']['table']['join'] = array(
+  $data['date_action']['table']['group']  = t('Node');
+  $data['date_action']['table']['join'] = array(
     'node' => array(
       'left_field'  => 'nid',
       'field'       => 'nid',
     ),
   );
 
-  $data['node_expire']['expire'] = array(
+  $data['date_action']['expire'] = array(
     'title' => t('Expire date'),
     'help'  => t('Date of when the content expire.'),
     'field' => array(
@@ -33,7 +33,7 @@ function node_expire_views_data() {
       'handler'         => 'views_handler_filter_date',
     ),
   );
-  $data['node_expire']['expired'] = array(
+  $data['date_action']['expired'] = array(
     'title' => t('Expired'),
     'help'  => t('Whether the content is expired.'),
     'field' => array(

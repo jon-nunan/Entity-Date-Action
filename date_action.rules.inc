@@ -1,5 +1,4 @@
 <?php
-// $Id: node_expire.rules.inc,v 1.1.2.4 2010/11/10 16:36:58 vikramy Exp $
 
 /**
  * @file
@@ -10,7 +9,7 @@
  * Implements hook_rules_action_info().
  * @ingroup rules
  */
-function node_expire_rules_action_info() {
+function date_action_rules_action_info() {
   $defaults = array(
    'parameter' => array(
       'node' => array(
@@ -32,15 +31,15 @@ function node_expire_rules_action_info() {
 
   $items['set_active'] =$defaults + array(
     'label'     => t('Set the active flag'),
-    'base'    => 'node_expire_set_active',
+    'base'    => 'date_action_set_active',
   );
   $items['set_inactive'] = $defaults + array(
     'label' => t('Unset the active flag'),
-    'base' => 'node_expire_unset_active',
+    'base' => 'date_action_unset_active',
   );	
   $items['set_date'] = $defaults + array(
     'label'     => t('Update date'),
-    'base'    => 'node_expire_update_lastnotify',
+    'base'    => 'date_action_update_lastnotify',
   );
   $items['set_rule'] = array (
     'parameter' => array(
@@ -61,13 +60,13 @@ function node_expire_rules_action_info() {
 	  ),
 	  'new_rule' =>array(
 	    'type' => 'list<integer>',
-		'options list' => 'node_expire_rule_types',
+		'options list' => 'date_action_rule_types',
 		'label' => t('Rule TID'),
 		'save' => TRUE,
 	  ),
 	),
     'label' => t('Set rule category'),
-	'base' => 'node_expire_set_rule',
+	'base' => 'date_action_set_rule',
 	'group' => t('Date Rules'),
   );
   
@@ -95,7 +94,7 @@ function node_expire_rules_action_info() {
 	  ),
 	),
     'label' => t('Add days to date action field'),
-	'base' => 'node_expire_add_days',
+	'base' => 'date_action_add_days',
 	'group' => t('Date Rules'),
   );
   
@@ -107,13 +106,13 @@ function node_expire_rules_action_info() {
  * @ingroup rules
  * TODO: make an entity to reduce num of variables
  */
-function node_expire_rules_condition_info() {
+function date_action_rules_condition_info() {
  $defaults = array(
    'parameter' => array(
       'term_list' => array(
         'type' => 'list<integer>',
-		'options list' => 'node_expire_rule_types',
-        'label' => t('Rule term'),
+		'options list' => 'date_action_rule_types',
+        'label' => t('Term for date action'),
         'save' => TRUE,
       ),
 	  'term' => array(
@@ -122,13 +121,13 @@ function node_expire_rules_condition_info() {
 		'save' => TRUE,
 	  ),
     ),
-    'group' => t('Rule type'),
+    'group' => t('Date action'),
   );
 
-  $items['node_expire_rules_rule_type'] =$defaults + array(
+  $items['date_action_rules_rule_type'] =$defaults + array(
     'label'     => t('Node expire has type'),
 	'help'      => 'Evaluates to TRUE, if the provided term matches the rule term.',
-    'base'    => 'node_expire_rules_rule_type',
+    'base'    => 'date_action_rules_rule_type',
   );
   return $items;
 }
@@ -137,7 +136,7 @@ function node_expire_rules_condition_info() {
  * Implements hook_rules_event_info().
  * @ingroup rules
  */
-function node_expire_rules_event_info() {
+function date_action_rules_event_info() {
   return array(
     'node_expired' => array(
       'label'     => t('Content expired'),
@@ -158,21 +157,21 @@ TODO: remove ugly admin hack, should only have permissions it needs!
 */
 
 
-function node_expire_set_active($node, $field, $delta) {
+function date_action_set_active($node, $field, $delta) {
   $date_action = $node->$field;
   $date_action['und'][$delta]['active'] = 1;
   $node->$field = $date_action;
   node_save($node);
 }
 
-function node_expire_unset_active($node, $field, $delta) {
+function date_action_unset_active($node, $field, $delta) {
   $date_action = $node->$field;
   $date_action['und'][$delta]['active'] = 0;
   $node->$field = $date_action;
   node_save($node);
 }
 
-function node_expire_set_rule($node, $field, $delta, $new_rule) {
+function date_action_set_rule($node, $field, $delta, $new_rule) {
    $date_action = $node->$field;
    $date_action['und'][$delta]['tid'] = array_pop($new_rule);
    $node->$field = $date_action;
@@ -182,7 +181,7 @@ function node_expire_set_rule($node, $field, $delta, $new_rule) {
    return false;
 }
 
-function node_expire_add_days($node, $field, $delta, $day_add) {
+function date_action_add_days($node, $field, $delta, $day_add) {
 
   $new_date = REQUEST_TIME + $day_add*24*60*60;
   $date_action = $node->$field;
@@ -194,8 +193,8 @@ function node_expire_add_days($node, $field, $delta, $day_add) {
 
 
 
-function node_expire_rule_types () {
-  $vid = variable_get('node_expire_default_vocab');
+function date_action_rule_types () {
+  $vid = variable_get('date_action_default_vocab');
   $terms = taxonomy_get_tree($vid);
   $options = array();
   foreach($terms as $term) {
@@ -206,6 +205,10 @@ function node_expire_rule_types () {
 }
 
 
-function node_expire_rules_rule_type($term_list, $term) {
+function date_action_rules_rule_type($term_list, $term) {
   return in_array($term, $term_list);
+}
+
+function date_action_update_lastnotify() {
+  return;
 }
