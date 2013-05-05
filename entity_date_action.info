@@ -1,0 +1,6 @@
+core = 7.x
+dependencies[]  = "rules"
+dependencies[]  = "date"
+description     = "Set a timer for your content, allowing you to perform customized actions."
+name            = "Entity Date Action"
+package         = "Workflow"
